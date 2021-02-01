@@ -199,8 +199,8 @@ create-cluster-item() {
         sleep 1
     done
 
-    log enable rabbitmq_federation plugin
-    docker exec $1 rabbitmq-plugins enable rabbitmq_federation
+    # log enable rabbitmq_federation plugin (not required)
+    # docker exec $1 rabbitmq-plugins enable rabbitmq_federation
 
     until [[ -n $(docker exec $1 rabbitmqctl cluster_status 2>/dev/null | grep status) ]]; do
         echo Waiting cluster ...
@@ -214,10 +214,17 @@ create-cluster() {
     create-cluster-item mirror-1 8001
     create-cluster-item mirror-2 8002
 
+    # log rabbitmqctl set policy (with federation)
+    # docker exec rabbit rabbitmqctl set_policy federation \
+    #     '.*' \
+    #     '{ "federation-upstream-set":"all", "ha-sync-mode":"automatic", "ha-mode":"nodes", "ha-params":["rabbit@rabbit", "rabbit@mirror-1", "rabbit@mirror-2"] }' \
+    #     --priority 1 \
+    #     --apply-to queues
+
     log rabbitmqctl set policy
-    docker exec rabbit rabbitmqctl set_policy federation \
+    docker exec rabbit rabbitmqctl set_policy ha-all \
         '.*' \
-        '{ "federation-upstream-set":"all", "ha-sync-mode":"automatic", "ha-mode":"nodes", "ha-params":["rabbit@rabbit", "rabbit@mirror-1", "rabbit@mirror-2"] }' \
+        '{ "ha-sync-mode":"automatic", "ha-mode":"nodes", "ha-params":["rabbit@rabbit", "rabbit@mirror-1", "rabbit@mirror-2"] }' \
         --priority 1 \
         --apply-to queues
 }
